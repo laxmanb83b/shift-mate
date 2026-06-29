@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "ShiftMate",
+    "slug": "shiftmate",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "shiftmate",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.shiftmate",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow access to your photos to attach a picture to a job posting."
+      }
+    },
+    "android": {
+      "package": "com.example.shiftmate",
+      "permissions": ["READ_MEDIA_IMAGES"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router", "expo-image-picker"],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "supabaseUrl": "https://YOUR-PROJECT.supabase.co",
+      "supabaseAnonKey": "YOUR-ANON-KEY"
+    }
+  }
+}
