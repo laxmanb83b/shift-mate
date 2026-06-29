@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { colors, radius, shadow, APP_NAME } from "@/lib/theme";
@@ -35,8 +36,13 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
+      // Redirect back to wherever the app is actually running:
+      // http://localhost:8081/ in dev, https://…github.io/shift-mate/ in prod,
+      // or the shiftmate:// scheme on native. Must be in Supabase's allow list.
+      const emailRedirectTo = Linking.createURL("/");
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
+        options: { emailRedirectTo },
       });
       if (error) throw error;
       setSent(true);
