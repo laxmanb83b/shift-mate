@@ -29,6 +29,16 @@ export default function LoginScreen() {
   const notify = (msg: string) =>
     Platform.OS === "web" ? window.alert(msg) : Alert.alert(msg);
 
+  // Pull a readable message out of whatever error shape Supabase throws.
+  const errMsg = (e: any, fallback: string): string => {
+    if (!e) return fallback;
+    if (typeof e === "string") return e;
+    const m =
+      e.message || e.error_description || e.msg || e.hint || e.error || "";
+    if (m) return e.status ? `${m} (${e.status})` : m;
+    return e.status ? `${fallback} (HTTP ${e.status})` : fallback;
+  };
+
   const sendCode = async () => {
     if (!email.trim()) {
       notify("Enter your email address.");
@@ -43,7 +53,8 @@ export default function LoginScreen() {
       if (error) throw error;
       setStep("code");
     } catch (e: any) {
-      notify(e?.message ?? "Could not send the code.");
+      console.log("signInWithOtp error:", e);
+      notify(errMsg(e, "Could not send the code. Check email/SMTP settings."));
     } finally {
       setLoading(false);
     }
@@ -64,7 +75,8 @@ export default function LoginScreen() {
       if (error) throw error;
       router.replace("/my-postings");
     } catch (e: any) {
-      notify(e?.message ?? "That code didn't work. Check it and try again.");
+      console.log("verifyOtp error:", e);
+      notify(errMsg(e, "That code didn't work. Check it and try again."));
     } finally {
       setLoading(false);
     }
