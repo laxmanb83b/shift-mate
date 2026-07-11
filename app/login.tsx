@@ -9,45 +9,62 @@ import {
   TextInput,
   View,
 } from "react-native";
-import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { colors, radius, shadow, APP_NAME } from "@/lib/theme";
 
 /**
- * Optional sign-in via email magic link / OTP. Browsing and posting can work
- * anonymously in the MVP; signing in lets a poster manage (edit/delete) their
- * own postings later.
+ * Passwordless sign-in with a 6-digit email CODE (not a magic link). The whole
+ * flow stays inside the app, so it works when the app is installed to the home
+ * screen — a magic link would open in a separate browser and lose the session.
  */
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState<"email" | "code">("email");
   const [loading, setLoading] = useState(false);
-  const [focused, setFocused] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const notify = (msg: string) =>
     Platform.OS === "web" ? window.alert(msg) : Alert.alert(msg);
 
-  const sendLink = async () => {
+  const sendCode = async () => {
     if (!email.trim()) {
       notify("Enter your email address.");
       return;
     }
     setLoading(true);
     try {
-      // Redirect back to wherever the app is actually running:
-      // http://localhost:8081/ in dev, https://…github.io/shift-mate/ in prod,
-      // or the shiftmate:// scheme on native. Must be in Supabase's allow list.
-      const emailRedirectTo = Linking.createURL("/");
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo },
+        options: { shouldCreateUser: true },
       });
       if (error) throw error;
-      setSent(true);
+      setStep("code");
     } catch (e: any) {
-      notify(e?.message ?? "Could not send sign-in link.");
+      notify(e?.message ?? "Could not send the code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verify = async () => {
+    if (code.trim().length < 6) {
+      notify("Enter the 6-digit code from your email.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code.trim(),
+        type: "email",
+      });
+      if (error) throw error;
+      router.replace("/my-postings");
+    } catch (e: any) {
+      notify(e?.message ?? "That code didn't work. Check it and try again.");
     } finally {
       setLoading(false);
     }
@@ -59,37 +76,71 @@ export default function LoginScreen() {
         <View style={styles.logoBadge}>
           <Text style={styles.logoText}>{APP_NAME}</Text>
         </View>
-        <Text style={styles.title}>Sign in to {APP_NAME}</Text>
-        <Text style={styles.sub}>
-          Manage your postings. We'll email you a secure sign-in link — no
-          password needed.
-        </Text>
 
-        {sent ? (
-          <View style={styles.sentBox}>
-            <Text style={styles.sentEmoji}>📬</Text>
-            <Text style={styles.sent}>Check your email for a sign-in link.</Text>
-          </View>
-        ) : (
+        {step === "email" ? (
           <>
+            <Text style={styles.title}>Sign in to {APP_NAME}</Text>
+            <Text style={styles.sub}>
+              Manage your postings. We'll email you a 6-digit code — no password
+              needed.
+            </Text>
             <TextInput
-              style={[styles.input, focused && styles.inputFocused]}
+              style={[styles.input, focused === "email" && styles.inputFocused]}
               placeholder="name@example.com"
               placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
+              autoComplete="email"
+              onFocus={() => setFocused("email")}
+              onBlur={() => setFocused(null)}
             />
-            <Pressable style={styles.btn} onPress={sendLink} disabled={loading}>
+            <Pressable style={styles.btn} onPress={sendCode} disabled={loading}>
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.btnText}>Send sign-in link</Text>
+                <Text style={styles.btnText}>Email me a code</Text>
               )}
             </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.title}>Enter your code</Text>
+            <Text style={styles.sub}>
+              We sent a 6-digit code to {email}. Enter it below to sign in.
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                styles.codeInput,
+                focused === "code" && styles.inputFocused,
+              ]}
+              placeholder="123456"
+              placeholderTextColor={colors.textMuted}
+              value={code}
+              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
+              keyboardType="number-pad"
+              autoComplete="one-time-code"
+              maxLength={6}
+              onFocus={() => setFocused("code")}
+              onBlur={() => setFocused(null)}
+            />
+            <Pressable style={styles.btn} onPress={verify} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.btnText}>Verify &amp; sign in</Text>
+              )}
+            </Pressable>
+            <View style={styles.codeActions}>
+              <Pressable onPress={() => setStep("email")}>
+                <Text style={styles.link}>Change email</Text>
+              </Pressable>
+              <Pressable onPress={sendCode} disabled={loading}>
+                <Text style={styles.link}>Resend code</Text>
+              </Pressable>
+            </View>
           </>
         )}
 
@@ -148,6 +199,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.inputBg,
   },
+  codeInput: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: 8,
+    textAlign: "center",
+  },
   inputFocused: { borderColor: colors.primary, backgroundColor: "#fff" },
   btn: {
     backgroundColor: colors.primary,
@@ -158,8 +215,11 @@ const styles = StyleSheet.create({
     ...shadow.raised,
   },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
-  sentBox: { alignItems: "center", marginVertical: 16 },
-  sentEmoji: { fontSize: 34, marginBottom: 8 },
-  sent: { fontSize: 16, color: colors.primaryDark, textAlign: "center", fontWeight: "600" },
+  codeActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  link: { color: colors.primary, fontWeight: "700", fontSize: 14 },
   skip: { color: colors.textMuted, textAlign: "center", marginTop: 22, fontSize: 14 },
 });
