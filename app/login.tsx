@@ -62,7 +62,7 @@ export default function LoginScreen() {
 
   const verify = async () => {
     if (code.trim().length < 6) {
-      notify("Enter the 6-digit code from your email.");
+      notify("Enter the code from your email.");
       return;
     }
     setLoading(true);
@@ -93,7 +93,7 @@ export default function LoginScreen() {
           <>
             <Text style={styles.title}>Sign in to {APP_NAME}</Text>
             <Text style={styles.sub}>
-              Manage your postings. We'll email you a 6-digit code — no password
+              Manage your postings. We'll email you a code — no password
               needed.
             </Text>
             <TextInput
@@ -120,7 +120,7 @@ export default function LoginScreen() {
           <>
             <Text style={styles.title}>Enter your code</Text>
             <Text style={styles.sub}>
-              We sent a 6-digit code to {email}. Enter it below to sign in.
+              We sent a code to {email}. Enter it below to sign in.
             </Text>
             <TextInput
               style={[
@@ -128,13 +128,13 @@ export default function LoginScreen() {
                 styles.codeInput,
                 focused === "code" && styles.inputFocused,
               ]}
-              placeholder="123456"
+              placeholder="Enter code"
               placeholderTextColor={colors.textMuted}
               value={code}
-              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
+              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 8))}
               keyboardType="number-pad"
               autoComplete="one-time-code"
-              maxLength={6}
+              maxLength={8}
               onFocus={() => setFocused("code")}
               onBlur={() => setFocused(null)}
             />
@@ -212,9 +212,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.inputBg,
   },
   codeInput: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "800",
-    letterSpacing: 8,
+    letterSpacing: 6,
     textAlign: "center",
   },
   inputFocused: { borderColor: colors.primary, backgroundColor: "#fff" },

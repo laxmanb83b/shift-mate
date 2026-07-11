@@ -66,6 +66,51 @@ Make yourself admin (one-time):
 4. Open the app → **My Postings** → the indigo **Admin review** banner appears,
    linking to the moderation queue. (To revoke: `delete from public.admins where user_id = '…';`)
 
+### Sign-in (email code) and email delivery (SMTP)
+
+Sign-in is passwordless: the app asks for an email, Supabase emails a **6-digit
+code**, and the user types it back into the app (`app/login.tsx` →
+`signInWithOtp` then `verifyOtp`). A code is used instead of a magic link so the
+flow stays inside the app — a link would open in a separate browser and break
+sign-in when the app is installed to the home screen.
+
+For the email to contain the code, the Supabase **Magic Link** email template
+must include `{{ .Token }}` (Dashboard → Authentication → Email Templates):
+
+```html
+<h2>Your ShiftMate sign-in code</h2>
+<p>Enter this code in the app to sign in:</p>
+<p style="font-size:24px;font-weight:bold;letter-spacing:4px">{{ .Token }}</p>
+<p>This code expires in 1 hour.</p>
+```
+
+**Custom SMTP (recommended).** Supabase's built-in email sender is rate-limited
+and for testing only. Point it at a real mailbox under Dashboard →
+**Authentication → Emails → SMTP Settings** → enable **Custom SMTP**.
+
+Gmail example (works for low volume):
+
+| Field | Value |
+|---|---|
+| Host | `smtp.gmail.com` |
+| Port | `465` (SSL) or `587` (TLS) |
+| Username | your full Gmail address |
+| Password | a Gmail **App Password** (16 chars) |
+| Sender email | your Gmail address (Gmail rewrites "From" to this) |
+| Sender name | ShiftMate |
+
+The App Password requires 2-Step Verification on the Google account
+(myaccount.google.com/security), then generate one at
+myaccount.google.com/apppasswords — your normal Gmail password will **not** work
+over SMTP.
+
+Caveats: regular Gmail allows ~500 emails/day (Workspace ~2,000); Gmail-sent
+auth mail can land in spam because the app's domain isn't authenticated. For
+production deliverability, use a dedicated provider with SPF/DKIM (e.g. Resend
+or SendGrid — both have free tiers) — same SMTP fields, different host and
+credentials. Enabling custom SMTP also lifts Supabase's low default email rate
+limit.
+
 ---
 
 ## 1. Prerequisites
