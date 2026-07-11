@@ -1,4 +1,4 @@
-# ShiftMate
+# Part-Time Job Board
 
 Cross-platform (iOS, Android, web) app for posting and browsing local part-time jobs. Posters add a title, description, location, and contact details, optionally with a photo that is **automatically screened** for vulgar / non-job content. Seekers browse and tap to call, text, or email.
 
@@ -13,103 +13,20 @@ Built with **Expo (React Native + TypeScript)**, **Supabase** (Postgres + Auth +
 ```
 app/                      Expo Router screens
   _layout.tsx             Navigation stack
-  index.tsx               Browse: search (location/type), category filter, pagination
-  post.tsx                Create a posting (form, category, "active for", image upload)
-  posting/[id].tsx        Detail + contact + "active till" + owner controls + report
-  my-postings.tsx         Manage your postings: edit / mark filled / delete
-  admin.tsx               Admin-only: review reported postings, dismiss or delete
+  index.tsx               Browse + search postings (has "Post a Job" button)
+  post.tsx                Create a posting (form + image upload)
+  posting/[id].tsx        Posting detail + contact buttons + report
   login.tsx               Optional email magic-link sign-in
-components/PostingCard.tsx Reusable list card (shows category)
+components/PostingCard.tsx Reusable list card
 lib/
   supabase.ts             Supabase client + bucket names
-  postings.ts             Data access, filters, pagination, manage, CATEGORIES
-  theme.ts                Colors, spacing, app name/description
+  postings.ts             Data access + uploadAndModerateImage()
   types.ts                Shared types
 supabase/
   schema.sql              Tables, RLS policies, storage buckets
-  migrations/0002_*.sql   Adds category, 'filled' status (run if schema already created)
   functions/moderate-image/index.ts   Edge Function calling Sightengine
 .github/workflows/deploy-web.yml      Web build → GitHub Pages on push to main
 ```
-
-### Postings: categories, expiry, and management
-
-Each posting has a **category** (Food & Café, Delivery, Tutoring, …) and an
-**"active till"** date that defaults to **30 days** (poster can pick 7/14/30/60).
-Browse shows only active, non-expired postings, **newest first**, paginated
-(20 per page with "Load more"). Search matches **location or job type/category**,
-and category chips filter the list.
-
-Posters who are **signed in** get owner controls on their postings — **mark as
-filled** (hides it once someone's hired), **reactivate**, or **delete** — from
-the detail screen or the **My Postings** screen. These actions are enforced
-server-side by Row Level Security, so only the owner can change their own posts.
-> If you already ran `schema.sql`, run `supabase/migrations/0002_categories_status_expiry.sql` once to add the new column/status.
-
-### Admin moderation
-
-Anyone can flag a posting with the **Report** button. A designated **admin**
-can review all reported postings on the **Admin Review** screen and either
-**dismiss** the reports or **delete** the posting immediately. Admin powers are
-enforced server-side by Row Level Security — non-admins can't read reports or
-delete others' postings, even if they call the API directly.
-
-Make yourself admin (one-time):
-
-1. Run `supabase/migrations/0003_admin_moderation.sql` in the SQL Editor (or
-   re-run `schema.sql` on a fresh project — it's included).
-2. Sign in to the app once with the email you want as admin.
-3. Find your user id under Dashboard → Authentication → Users, then run:
-   ```sql
-   insert into public.admins (user_id) values ('YOUR-USER-UUID');
-   ```
-4. Open the app → **My Postings** → the indigo **Admin review** banner appears,
-   linking to the moderation queue. (To revoke: `delete from public.admins where user_id = '…';`)
-
-### Sign-in (email code) and email delivery (SMTP)
-
-Sign-in is passwordless: the app asks for an email, Supabase emails a **6-digit
-code**, and the user types it back into the app (`app/login.tsx` →
-`signInWithOtp` then `verifyOtp`). A code is used instead of a magic link so the
-flow stays inside the app — a link would open in a separate browser and break
-sign-in when the app is installed to the home screen.
-
-For the email to contain the code, the Supabase **Magic Link** email template
-must include `{{ .Token }}` (Dashboard → Authentication → Email Templates):
-
-```html
-<h2>Your ShiftMate sign-in code</h2>
-<p>Enter this code in the app to sign in:</p>
-<p style="font-size:24px;font-weight:bold;letter-spacing:4px">{{ .Token }}</p>
-<p>This code expires in 1 hour.</p>
-```
-
-**Custom SMTP (recommended).** Supabase's built-in email sender is rate-limited
-and for testing only. Point it at a real mailbox under Dashboard →
-**Authentication → Emails → SMTP Settings** → enable **Custom SMTP**.
-
-Gmail example (works for low volume):
-
-| Field | Value |
-|---|---|
-| Host | `smtp.gmail.com` |
-| Port | `465` (SSL) or `587` (TLS) |
-| Username | your full Gmail address |
-| Password | a Gmail **App Password** (16 chars) |
-| Sender email | your Gmail address (Gmail rewrites "From" to this) |
-| Sender name | ShiftMate |
-
-The App Password requires 2-Step Verification on the Google account
-(myaccount.google.com/security), then generate one at
-myaccount.google.com/apppasswords — your normal Gmail password will **not** work
-over SMTP.
-
-Caveats: regular Gmail allows ~500 emails/day (Workspace ~2,000); Gmail-sent
-auth mail can land in spam because the app's domain isn't authenticated. For
-production deliverability, use a dedicated provider with SPF/DKIM (e.g. Resend
-or SendGrid — both have free tiers) — same SMTP fields, different host and
-credentials. Enabling custom SMTP also lifts Supabase's low default email rate
-limit.
 
 ---
 
@@ -126,9 +43,9 @@ limit.
    ```bash
    npm i -g supabase
    supabase login
-   supabase link --project-ref YOUR_PROJECT_REF
+   supabase link --project-ref erzzpfnezynjptjkbcfw #YOUR_PROJECT_REF
    supabase functions deploy moderate-image
-   supabase secrets set SIGHTENGINE_API_USER=xxx SIGHTENGINE_API_SECRET=xxx
+   supabase secrets set SIGHTENGINE_API_USER=your-sightengine-user SIGHTENGINE_API_SECRET=your-sightengine-secret
    ```
    (Without the Sightengine secrets the function "fails open" and approves images — fine for early dev.)
 
