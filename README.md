@@ -101,3 +101,43 @@ Free EAS plan covers ~15 iOS + 15 Android builds/month. Store publishing needs a
 - **GitHub Actions:** 2,000 free minutes/month; GitHub Pages free.
 
 Upgrade paths (do later based on usage): move images to a CDN/object store (e.g. Cloudflare R2/S3), add Postgres read replicas or upgrade Supabase tier, add pg_cron for auto-expiry, and a stricter image classifier.
+
+---
+
+## Security & secrets
+
+Keep credentials out of the repo. GitHub push protection will block a push that
+contains a detected secret.
+
+**Public vs. secret — know the difference:**
+
+- **Safe to expose (client-side):** the Supabase **URL**, the project **ref**,
+  and the **anon key**. These ship in the web/mobile app by design; Row Level
+  Security is what actually protects your data. Keep RLS enabled on every table.
+- **Never commit / never ship in the app:** the Supabase **service role key**
+  and any `sb_secret_…` **secret key**, the **Sightengine** API user/secret,
+  SMTP/Gmail **App Passwords**, and any other provider secret.
+
+**Where secrets belong:**
+
+- Server-side secrets (Sightengine keys, service role): set with
+  `supabase secrets set NAME=value` in your terminal, or in the Supabase
+  dashboard. Edge Functions read them from the environment — see
+  `supabase/functions/moderate-image/index.ts`.
+- Local dev values (Supabase URL + anon key): put them in `.env` (already
+  git-ignored). Only `.env.example` — with placeholders — is committed.
+- CI/CD: store `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` as
+  GitHub repo secrets (Settings → Secrets and variables → Actions).
+
+**If a secret is ever committed:** treat it as compromised — rotate it at the
+provider (e.g. Supabase → Settings → API keys → roll the key), then remove it
+from the file and from git history (amend the commit if it's the latest, or use
+`git filter-repo` / BFG for older ones) before pushing.
+
+**Quick self-check before a push:**
+
+```bash
+git ls-files | grep -v node_modules | xargs grep -nE 'sb_secret_|service_role|eyJ[A-Za-z0-9_-]{30,}' 2>/dev/null
+```
+
+No output means no obvious keys in tracked files.
