@@ -2,29 +2,39 @@
   "expo": {
     "name": "ShiftMate",
     "slug": "shiftmate",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "shiftmate",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4f46e5"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.shiftmate",
+      "bundleIdentifier": "com.laxmanb.shiftmate",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow access to your photos to attach a picture to a job posting."
+        "NSPhotoLibraryUsageDescription": "ShiftMate needs access to your photos so you can attach a picture to a job posting.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.example.shiftmate",
+      "package": "com.laxmanb.shiftmate",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4f46e5"
+      },
       "permissions": ["READ_MEDIA_IMAGES"]
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": ["expo-router", "expo-image-picker"],
     "experiments": {
@@ -32,7 +42,10 @@
     },
     "extra": {
       "supabaseUrl": "https://YOUR-PROJECT.supabase.co",
-      "supabaseAnonKey": "YOUR-ANON-KEY"
+      "supabaseAnonKey": "YOUR-ANON-KEY",
+      "eas": {
+        "projectId": "PASTE-AFTER-eas-init"
+      }
     }
   }
 }

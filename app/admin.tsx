@@ -108,9 +108,18 @@ export default function AdminScreen() {
       keyExtractor={(it) => it.posting.id}
       contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
       ListHeaderComponent={
-        <Text style={styles.count}>
-          {items.length} reported {items.length === 1 ? "posting" : "postings"}
-        </Text>
+        <View>
+          <Pressable
+            style={styles.usersBtn}
+            onPress={() => router.push("/admin-users")}
+          >
+            <Text style={styles.usersBtnText}>👥 View all registered users</Text>
+            <Text style={styles.usersBtnArrow}>›</Text>
+          </Pressable>
+          <Text style={styles.count}>
+            {items.length} reported {items.length === 1 ? "posting" : "postings"}
+          </Text>
+        </View>
       }
       renderItem={({ item }) => {
         const busy = busyId === item.posting.id;
@@ -204,6 +213,18 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: "#fff", fontWeight: "800" },
 
+  usersBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    ...shadow.card,
+  },
+  usersBtnText: { flex: 1, color: "#fff", fontWeight: "800", fontSize: 14 },
+  usersBtnArrow: { color: "#fff", fontSize: 22, fontWeight: "800" },
   count: {
     color: colors.textMuted,
     fontSize: 13,
@@ -211,6 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 4,
   },
+
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

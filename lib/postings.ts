@@ -263,6 +263,38 @@ export async function fetchReportedPostings(): Promise<ReportedPosting[]> {
   return Array.from(grouped.values());
 }
 
+export interface AdminUser {
+  id: string;
+  email: string | null;
+  created_at: string;
+  last_sign_in: string | null;
+  posting_count: number;
+}
+
+/** Admin-only: list registered users with their post counts (newest first). */
+export async function adminListUsers(): Promise<AdminUser[]> {
+  const { data, error } = await supabase.rpc("admin_list_users");
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((u) => ({
+    id: u.id,
+    email: u.email ?? null,
+    created_at: u.created_at,
+    last_sign_in: u.last_sign_in ?? null,
+    posting_count: Number(u.posting_count ?? 0),
+  }));
+}
+
+/** Postings by a specific user (admins can read any via RLS), newest first. */
+export async function fetchPostingsByUser(userId: string): Promise<Posting[]> {
+  const { data, error } = await supabase
+    .from("postings")
+    .select("*")
+    .eq("poster_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** Admin-only: dismiss all reports for a posting without deleting the post. */
 export async function dismissReports(postingId: string): Promise<void> {
   const { error } = await supabase

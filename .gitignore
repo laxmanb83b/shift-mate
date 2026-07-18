@@ -8,3 +8,12 @@ web-build/
 .DS_Store
 ios/
 android/
+
+# Store signing / service-account credentials — never commit these
+google-play-service-account.json
+google-services.json
+*.p8
+*.p12
+*.keystore
+*.jks
+*.mobileprovision
