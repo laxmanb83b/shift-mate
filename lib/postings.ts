@@ -295,6 +295,17 @@ export async function adminListUsers(): Promise<AdminUser[]> {
   }));
 }
 
+/** Admin-only: all hidden postings, newest first. */
+export async function fetchHiddenPostings(): Promise<Posting[]> {
+  const { data, error } = await supabase
+    .from("postings")
+    .select("*")
+    .eq("status", "hidden")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** Postings by a specific user (admins can read any via RLS), newest first. */
 export async function fetchPostingsByUser(userId: string): Promise<Posting[]> {
   const { data, error } = await supabase

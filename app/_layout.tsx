@@ -21,6 +21,7 @@ export default function RootLayout() {
         <Stack.Screen name="my-postings" options={{ title: "My Postings" }} />
         <Stack.Screen name="admin" options={{ title: "Admin Review" }} />
         <Stack.Screen name="admin-users" options={{ title: "Registered Users" }} />
+        <Stack.Screen name="admin-hidden" options={{ title: "Hidden Postings" }} />
         <Stack.Screen name="login" options={{ title: "Sign In" }} />
       </Stack>
     </>

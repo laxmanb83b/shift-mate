@@ -116,6 +116,13 @@ export default function AdminScreen() {
             <Text style={styles.usersBtnText}>👥 View all registered users</Text>
             <Text style={styles.usersBtnArrow}>›</Text>
           </Pressable>
+          <Pressable
+            style={styles.hiddenNavBtn}
+            onPress={() => router.push("/admin-hidden")}
+          >
+            <Text style={styles.hiddenNavText}>🙈 Hidden postings</Text>
+            <Text style={styles.hiddenNavArrow}>›</Text>
+          </Pressable>
           <Text style={styles.count}>
             {items.length} reported {items.length === 1 ? "posting" : "postings"}
           </Text>
@@ -225,6 +232,19 @@ const styles = StyleSheet.create({
   },
   usersBtnText: { flex: 1, color: "#fff", fontWeight: "800", fontSize: 14 },
   usersBtnArrow: { color: "#fff", fontSize: 22, fontWeight: "800" },
+  hiddenNavBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  hiddenNavText: { flex: 1, color: colors.primary, fontWeight: "800", fontSize: 14 },
+  hiddenNavArrow: { color: colors.primary, fontSize: 22, fontWeight: "800" },
   count: {
     color: colors.textMuted,
     fontSize: 13,
