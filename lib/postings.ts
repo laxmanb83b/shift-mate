@@ -166,10 +166,21 @@ export async function updatePostingStatus(
   if (error) throw error;
 }
 
-/** Permanently delete a posting (owner only, enforced by RLS). */
+/** Permanently delete a posting (owner or admin, enforced by RLS). */
 export async function deletePosting(id: string): Promise<void> {
   const { error } = await supabase.from("postings").delete().eq("id", id);
   if (error) throw error;
+}
+
+/** Admin/owner: delete every posting by a user. Returns how many were removed. */
+export async function deletePostingsByUser(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("postings")
+    .delete()
+    .eq("poster_id", userId)
+    .select("id");
+  if (error) throw error;
+  return data?.length ?? 0;
 }
 
 /**

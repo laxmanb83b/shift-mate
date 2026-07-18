@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +14,8 @@ import {
   isAdmin,
   adminListUsers,
   fetchPostingsByUser,
+  deletePosting,
+  deletePostingsByUser,
   formatActiveTill,
   type AdminUser,
 } from "@/lib/postings";
@@ -33,6 +37,60 @@ export default function AdminUsersScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [postsByUser, setPostsByUser] = useState<Record<string, Posting[]>>({});
   const [loadingPosts, setLoadingPosts] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const notify = (msg: string) =>
+    Platform.OS === "web" ? window.alert(msg) : Alert.alert(msg);
+
+  const confirm = (msg: string, onYes: () => void) => {
+    if (Platform.OS === "web") {
+      if (window.confirm(msg)) onYes();
+    } else {
+      Alert.alert("Please confirm", msg, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onYes },
+      ]);
+    }
+  };
+
+  const setUserCount = (userId: string, count: number) =>
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, posting_count: count } : u))
+    );
+
+  const deleteOne = (userId: string, post: Posting) =>
+    confirm(`Delete "${post.title}"?`, async () => {
+      setBusy(post.id);
+      try {
+        await deletePosting(post.id);
+        const remaining = (postsByUser[userId] ?? []).filter(
+          (p) => p.id !== post.id
+        );
+        setPostsByUser((prev) => ({ ...prev, [userId]: remaining }));
+        setUserCount(userId, remaining.length);
+      } catch {
+        notify("Could not delete the posting.");
+      } finally {
+        setBusy(null);
+      }
+    });
+
+  const deleteAll = (u: AdminUser) =>
+    confirm(
+      `Delete ALL ${u.posting_count} posts by ${u.email ?? "this user"}? This cannot be undone.`,
+      async () => {
+        setBusy(u.id);
+        try {
+          await deletePostingsByUser(u.id);
+          setPostsByUser((prev) => ({ ...prev, [u.id]: [] }));
+          setUserCount(u.id, 0);
+        } catch {
+          notify("Could not delete the postings.");
+        } finally {
+          setBusy(null);
+        }
+      }
+    );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,35 +184,52 @@ export default function AdminUsersScreen() {
                 ) : item.posting_count === 0 ? (
                   <Text style={styles.noPosts}>No postings.</Text>
                 ) : (
-                  posts.map((p) => (
+                  <>
                     <Pressable
-                      key={p.id}
-                      style={styles.postRow}
-                      onPress={() => router.push(`/posting/${p.id}`)}
+                      style={styles.deleteAllBtn}
+                      disabled={busy === item.id}
+                      onPress={() => deleteAll(item)}
                     >
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.postTitle} numberOfLines={1}>
-                          {p.title}
-                        </Text>
-                        <Text style={styles.postMeta}>
-                          {p.category ? `${p.category} · ` : ""}till{" "}
-                          {formatActiveTill(p.expires_at)}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.badge,
-                          p.status === "active"
-                            ? styles.badgeActive
-                            : styles.badgeMuted,
-                        ]}
-                      >
-                        <Text style={styles.badgeText}>
-                          {STATUS_LABEL[p.status] ?? p.status}
-                        </Text>
-                      </View>
+                      <Text style={styles.deleteAllText}>
+                        🗑 Delete all {item.posting_count} posts
+                      </Text>
                     </Pressable>
-                  ))
+                    {posts.map((p) => (
+                      <View key={p.id} style={styles.postRow}>
+                        <Pressable
+                          style={styles.postMain}
+                          onPress={() => router.push(`/posting/${p.id}`)}
+                        >
+                          <Text style={styles.postTitle} numberOfLines={1}>
+                            {p.title}
+                          </Text>
+                          <Text style={styles.postMeta}>
+                            {p.category ? `${p.category} · ` : ""}till{" "}
+                            {formatActiveTill(p.expires_at)}
+                          </Text>
+                        </Pressable>
+                        <View
+                          style={[
+                            styles.badge,
+                            p.status === "active"
+                              ? styles.badgeActive
+                              : styles.badgeMuted,
+                          ]}
+                        >
+                          <Text style={styles.badgeText}>
+                            {STATUS_LABEL[p.status] ?? p.status}
+                          </Text>
+                        </View>
+                        <Pressable
+                          style={styles.delBtn}
+                          disabled={busy === p.id}
+                          onPress={() => deleteOne(item.id, p)}
+                        >
+                          <Text style={styles.delBtnText}>🗑</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </>
                 )}
               </View>
             ) : null}
@@ -230,6 +305,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   noPosts: { color: colors.textMuted, fontSize: 13, paddingVertical: 12, paddingHorizontal: 2 },
+  deleteAllBtn: {
+    alignSelf: "flex-start",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  deleteAllText: { color: colors.danger, fontWeight: "700", fontSize: 12 },
   postRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -238,6 +325,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  postMain: { flex: 1 },
+  delBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#fee2e2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  delBtnText: { fontSize: 15 },
   postTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
   postMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   badge: { borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 3 },
