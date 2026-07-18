@@ -16,6 +16,7 @@ import {
   fetchPostingsByUser,
   deletePosting,
   deletePostingsByUser,
+  updatePostingStatus,
   formatActiveTill,
   type AdminUser,
 } from "@/lib/postings";
@@ -27,6 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
   filled: "Filled",
   expired: "Expired",
   flagged: "Flagged",
+  hidden: "Hidden",
 };
 
 export default function AdminUsersScreen() {
@@ -74,6 +76,24 @@ export default function AdminUsersScreen() {
         setBusy(null);
       }
     });
+
+  const toggleHide = async (userId: string, post: Posting) => {
+    setBusy(post.id);
+    try {
+      const next = post.status === "hidden" ? "active" : "hidden";
+      await updatePostingStatus(post.id, next);
+      setPostsByUser((prev) => ({
+        ...prev,
+        [userId]: (prev[userId] ?? []).map((p) =>
+          p.id === post.id ? { ...p, status: next } : p
+        ),
+      }));
+    } catch {
+      notify("Could not update the posting.");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const deleteAll = (u: AdminUser) =>
     confirm(
@@ -221,6 +241,15 @@ export default function AdminUsersScreen() {
                           </Text>
                         </View>
                         <Pressable
+                          style={styles.hideBtn}
+                          disabled={busy === p.id}
+                          onPress={() => toggleHide(item.id, p)}
+                        >
+                          <Text style={styles.hideBtnText}>
+                            {p.status === "hidden" ? "👁" : "🙈"}
+                          </Text>
+                        </Pressable>
+                        <Pressable
                           style={styles.delBtn}
                           disabled={busy === p.id}
                           onPress={() => deleteOne(item.id, p)}
@@ -326,6 +355,15 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   postMain: { flex: 1 },
+  hideBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hideBtnText: { fontSize: 15 },
   delBtn: {
     width: 34,
     height: 34,

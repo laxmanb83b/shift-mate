@@ -18,7 +18,7 @@ create table if not exists public.postings (
   lng           double precision,
   image_url     text,
   status        text not null default 'active'
-                 check (status in ('active','filled','expired','flagged')),
+                 check (status in ('active','filled','expired','flagged','hidden')),
   -- 'active till' — defaults to 30 days from creation.
   expires_at    timestamptz default (now() + interval '30 days')
 );
@@ -115,6 +115,8 @@ create policy "admin reads all postings"
   on public.postings for select using (public.is_admin());
 create policy "admin deletes any posting"
   on public.postings for delete using (public.is_admin());
+create policy "admin updates any posting"
+  on public.postings for update using (public.is_admin());
 
 -- Admins can read and dismiss (delete) reports.
 create policy "admin reads reports"

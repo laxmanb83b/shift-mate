@@ -120,6 +120,7 @@ export default function PostingDetail() {
     );
 
   const filled = posting.status === "filled";
+  const hidden = posting.status === "hidden";
 
   return (
     <ScrollView
@@ -138,6 +139,13 @@ export default function PostingDetail() {
         {filled ? (
           <View style={styles.filledBanner}>
             <Text style={styles.filledText}>✓ This position has been filled</Text>
+          </View>
+        ) : null}
+        {hidden ? (
+          <View style={styles.hiddenBanner}>
+            <Text style={styles.hiddenText}>
+              🙈 Hidden by an admin — not shown in Browse
+            </Text>
           </View>
         ) : null}
 
@@ -237,8 +245,21 @@ export default function PostingDetail() {
           <View style={[styles.ownerBox, styles.adminBox]}>
             <Text style={styles.adminHeader}>🛡 Admin moderation</Text>
             <Text style={styles.adminNote}>
-              Remove this posting if it's inappropriate, even without a report.
+              Hide it from Browse, or remove it entirely if inappropriate.
             </Text>
+            <Pressable
+              style={[styles.ownerBtn, styles.adminHide]}
+              disabled={busy}
+              onPress={() =>
+                hidden
+                  ? setStatus("active", "Posting is visible again.")
+                  : setStatus("hidden", "Posting hidden from Browse.")
+              }
+            >
+              <Text style={styles.ownerBtnText}>
+                {hidden ? "👁 Unhide posting" : "🙈 Hide from Browse"}
+              </Text>
+            </Pressable>
             <Pressable
               style={[styles.ownerBtn, styles.adminDelete]}
               disabled={busy}
@@ -287,6 +308,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   filledText: { color: "#15803d", fontWeight: "700", textAlign: "center" },
+  hiddenBanner: {
+    backgroundColor: "#e2e8f0",
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+  hiddenText: { color: "#475569", fontWeight: "700", textAlign: "center" },
   title: { fontSize: 23, fontWeight: "800", color: colors.text },
   metaRow: {
     flexDirection: "row",
@@ -392,6 +421,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     lineHeight: 19,
   },
+  adminHide: { backgroundColor: "#475569" },
   adminDelete: { backgroundColor: colors.danger },
 
   report: { marginTop: 30, alignItems: "center" },

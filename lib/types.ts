@@ -1,4 +1,9 @@
-export type PostingStatus = "active" | "filled" | "expired" | "flagged";
+export type PostingStatus =
+  | "active"
+  | "filled"
+  | "expired"
+  | "flagged"
+  | "hidden";
 
 export interface Posting {
   id: string;

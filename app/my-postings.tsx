@@ -28,6 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
   filled: "Filled",
   expired: "Expired",
   flagged: "Under review",
+  hidden: "Hidden by admin",
 };
 
 export default function MyPostingsScreen() {
