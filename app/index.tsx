@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   logoPillText: { color: "#fff", fontWeight: "800", fontSize: 19, letterSpacing: 0.3 },
-  tagline: { color: "#dbe0ff", fontSize: 13, marginTop: 10 },
+  tagline: { color: "#c5d5fb", fontSize: 13, marginTop: 10 },
   mineBtn: {
     backgroundColor: "rgba(255,255,255,0.18)",
     paddingHorizontal: 12,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   mineBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
   description: {
-    color: "#e6e9ff",
+    color: "#d6e2fc",
     fontSize: 13,
     lineHeight: 19,
     marginTop: 12,
